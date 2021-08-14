@@ -1,0 +1,3 @@
+[submodule "covid19za"]
+	path = covid19za
+	url = https://github.com/dsfsi/covid19za.git
