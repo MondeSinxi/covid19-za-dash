@@ -23,6 +23,10 @@ row = html.Div([
             clearable=False
         ), width=4),
         ]),
+    dbc.Row([
+        dbc.Col(html.H2(children=["Cummulative Cases"]), width={"size": 6} ),
+        dbc.Col(html.H2(children=["Daily Cases"]), width={"size": 6} ),
+    ]),
     dbc.Row(
         [
             dbc.Col(dcc.Graph(id="confirmed" ), width=6),
@@ -30,9 +34,13 @@ row = html.Div([
 
         ]
     ),
+    dbc.Row([
+        dbc.Col(html.H2(children=["Cummulative Deaths"]), width={"size": 6} ),
+        dbc.Col(html.H2(children=["Daily Deaths"]), width={"size": 6} ),
+    ]),
     dbc.Row(
     [
-        dbc.Col(dcc.Graph(id="deaths" ), width=6),
+        dbc.Col(dcc.Graph(id="deaths"), width=6),
         dbc.Col(dcc.Graph(id="daily_deaths"), width=6),
 
     ]
@@ -86,7 +94,6 @@ def show_province(province):
 )
 def show_daily_cases(province):
     data = get_covid19_data(["deaths"])
-
     df = to_long_form(data["deaths"]["data"])
     df_mod = df.loc[df["variable"] == province]
     df_mod['daily'] = df_mod["value"].diff()

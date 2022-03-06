@@ -11,7 +11,6 @@ def get_covid19_data(categories: list) -> dict:
         file_path = DATA_PATH / f"covid19za_provincial_cumulative_timeline_{data_type}.csv"
         df = pd.read_csv(file_path)
         df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y")
-        # df['daily_value'] = df.total.diff()
         DATA[data_type] = {"path": file_path, "data": df}
     return DATA
 
