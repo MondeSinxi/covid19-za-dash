@@ -26,18 +26,6 @@ def extract_data(data_file_path, date_column_name="date", date_format="%d-%m-%Y"
     df[date_column_name] = pd.to_datetime(df[date_column_name], format=date_format)
     return df.sort_values(by=date_column_name)
 
-def plot_two_charts(data_1, data_2):
-    """Plot to graphs on a single chart"""
-    graph_1 = alt.Chart(data_1.data).mark_area(opacity=0.3, color='green').encode(
-        alt.X(data_1.X), alt.Y(data_1.Y)).interactive()
-
-    graph_2 = alt.Chart(data_2.data).mark_area(opacity=0.3, color='red').encode(
-        alt.X(data_2.X), alt.Y(data_2.Y)).interactive()
-
-    layered_chart = alt.layer(graph_1, graph_2)
-    return st.altair_chart(layered_chart, use_container_width=True)
-
-
 def format_name(s):
     return s.replace('_', " ").capitalize()
 
