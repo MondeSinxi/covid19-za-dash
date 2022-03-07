@@ -1,21 +1,47 @@
 import pandas as pd
 from pathlib import Path
 
-DATA_PATH = Path("covid19za/data")
+DATA_PATH = Path("covid19za/data/")
 
-CATEGORIES = ["confirmed", "recoveries", "deaths", "testing", "vaccination"]
+HOSPITALISATION_DATA = Path('nicd_hospitalisation.csv')
 
-def get_covid19_data(categories: list) -> dict:
-    DATA = {}
-    for data_type in categories:
-        file_path = DATA_PATH / f"covid19za_provincial_cumulative_timeline_{data_type}.csv"
-        df = pd.read_csv(file_path)
-        df["date"] = pd.to_datetime(df["date"], format="%d-%m-%Y")
-        DATA[data_type] = {"path": file_path, "data": df}
-    return DATA
+DEATHS_PATH = DATA_PATH / "covid19za_provincial_cumulative_timeline_deaths.csv"
+CASES_PATH = DATA_PATH / "covid19za_provincial_cumulative_timeline_confirmed.csv"
 
-def to_long_form(df: pd.DataFrame, id_vars: list = ['date'], value_vars=['EC', 'FS', 'GP', 'KZN', 'LP', 'MP', 'NC', 'NW', 'MP', 'WC', 'total']) -> pd.DataFrame:
-    return pd.melt(df, id_vars=id_vars, value_vars=value_vars)
+PROVINCE_MAPPING = {"Eastern Cape": "EC", "Free State": "FS", "Gauteng": "GP",
+                    "KwaZulu-Natal": "KZN", "Limpopo": "LP",
+                    "Mpumalanga": "MP", "Northern Cape": "NC", "North West": "NW",
+                    "Western Cape": "WC", "Total": "total"}
 
-if __name__ == "__main__":
-    print(get_covid19_data(CATEGORIES))
+PROVINCE_CODE_MAPPING = {"EC": "Eastern Cape", "FS": "Free State", "GP": "Gauteng",
+                    "KZN": "KwaZulu-Natal", "LP": "Limpopo",
+                    "MP": "Mpumalanga", "NC": "Northern Cape", "NW": "North West",
+                    "WC": "Western Cape", "total": "Total"}
+
+def extract_data(data_file_path, date_column_name="date", date_format="%d-%m-%Y"):
+    """ Read csv file and return dataframe"""
+    df = pd.read_csv(data_file_path)
+    df[date_column_name] = pd.to_datetime(df[date_column_name], format=date_format)
+    return df.sort_values(by=date_column_name)
+
+df_hosp = extract_data(HOSPITALISATION_DATA, date_format="%Y-%m-%d")
+df_cases_1 = extract_data(CASES_PATH)
+df_cases = df_cases_1[['EC', 'FS', 'GP', 'KZN', 'LP', 'MP', 'NC', 'NW', 'WC', 'total']].diff()
+df_cases["date"] = df_cases_1["date"]
+
+df_deaths_1 = extract_data(DEATHS_PATH)
+df_deaths = df_deaths_1[['EC', 'FS', 'GP', 'KZN', 'LP', 'MP', 'NC', 'NW', 'WC', 'total']].diff()
+df_deaths["date"] = df_deaths_1["date"]
+
+df_cases['type'] = 'cases'
+df_deaths['type'] = 'deaths'
+
+df = pd.concat([df_cases,df_deaths])
+
+df = df.melt(id_vars=['date', 'type'], value_vars=['total', 'EC', 'FS',  'GP', 'KZN', 'LP',  'MP', 'NC', 'NW', 'WC'])
+
+df["variable"] = df.variable.apply(lambda x: PROVINCE_CODE_MAPPING[x])
+df_hosp_melt = df_hosp.melt(id_vars=['date', 'province'], value_vars=['currently_admitted', 'current_in_icu'])
+df_hosp_melt.columns = ['date', 'variable', 'type', 'value']
+
+data = pd.concat([df,df_hosp_melt])
