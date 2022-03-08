@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import datetime
 import altair as alt
 
 from data_handler import data
@@ -24,13 +25,52 @@ type_selection = st.multiselect("Select data type", data.type.unique(), default=
                            format_func = format_name,
                            help="select type of data to display")
 
-# filter
+
+# Filter
 filtered_data = data[(data["type"].isin(type_selection)) & (data["variable"] == province_selection)]
 
-chart = alt.Chart(filtered_data).mark_area(opacity=0.3).encode(
+# Plot
+area_chart = alt.Chart(filtered_data).mark_area(opacity=0.3).encode(
     x="date:T",
     y=alt.Y("value:Q", stack=None),
     color="type:N"
-).interactive()
+)
 
-st.altair_chart(chart, use_container_width=True)
+# Create a selection that chooses the nearest point & selects based on x-value
+nearest = alt.selection(type='single', nearest=True, on='mouseover',
+                        fields=['date'], empty='none')
+
+
+# Transparent selectors across the chart. This is what tells us
+# the x-value of the cursor
+selectors = alt.Chart(filtered_data).mark_point().encode(
+    x='date:T',
+    opacity=alt.value(0),
+).add_selection(
+    nearest
+)
+
+
+# Draw a rule at the location of the selection
+rules = alt.Chart(filtered_data).mark_rule(color='gray').encode(
+    x='date:T',
+).transform_filter(
+    nearest
+)
+
+# Draw points on the line, and highlight based on selection
+points = area_chart.mark_point().encode(
+    opacity=alt.condition(nearest, alt.value(1), alt.value(0))
+)
+
+# Draw text labels near the points, and highlight based on selection
+text = area_chart.mark_text(align='left', dx=5, dy=-5).encode(
+    text=alt.condition(nearest, 'value:Q', alt.value(' '))
+)
+
+# Put the five layers into a chart and bind the data
+layered_chart = alt.layer(
+    area_chart, selectors, points, rules, text
+).encode(tooltip=["date"]).interactive()
+
+st.altair_chart(layered_chart, use_container_width=True)
