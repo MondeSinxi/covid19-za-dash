@@ -93,4 +93,5 @@ layered_chart = (
     .interactive()
 )
 
+# Plot the chart
 st.altair_chart(layered_chart, use_container_width=True)
